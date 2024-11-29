@@ -76,7 +76,7 @@ export function parseEndMarker(
     );
   }
 
-  // TODO feed the buffer to custom environment parser and push to newChildren
+  // TODO feed the buffer to custom environment parser and return the new content
   const newContent: RootContent[] = buffer[-1];
 
   return newContent;

@@ -12,8 +12,8 @@ import { Options } from "./index";
 export interface BlockStartInfo {
   envName: string;
   line?: number;
-  params: string;
-  numbering: number;
+  params?: string;
+  numbering?: number;
 }
 
 /**

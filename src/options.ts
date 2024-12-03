@@ -30,7 +30,7 @@ export interface Options {
  *   Defaults to true.
  */
 export interface TheoremOptions {
-  startText: string;
+  envStartText: string;
   counterLabel: string;
   addNumbering: boolean;
 }
@@ -41,7 +41,7 @@ export interface TheoremOptions {
  *   The label to use in the output (e.g., "■").
  */
 export interface GeneralEnvOptions extends TheoremOptions {
-  endText: string;
+  envEndText: string;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface GeneralEnvOptions extends TheoremOptions {
 export function defaultTheoremOptions(label: string): TheoremOptions {
   return {
     // Capitalized label
-    startText: label.charAt(0).toUpperCase() + label.slice(1),
+    envStartText: label.charAt(0).toUpperCase() + label.slice(1),
     counterLabel: label.toLowerCase(),
     addNumbering: true,
   };
@@ -65,10 +65,10 @@ export function defaultTheoremOptions(label: string): TheoremOptions {
  * @type {GeneralEnvOptions}
  */
 const defaultProofOptions: GeneralEnvOptions = {
-  startText: "Proof:",
+  envStartText: "Proof:",
   counterLabel: "proof",
   addNumbering: false,
-  endText: "■",
+  envEndText: "■",
 };
 
 /**

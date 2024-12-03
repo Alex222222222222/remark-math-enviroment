@@ -74,6 +74,8 @@ export function parseStartMarker(
     );
   }
 
+  // TODO if the name is not valid throw an error
+
   // get the optional params
   const params: string = match[2] ?? "";
 

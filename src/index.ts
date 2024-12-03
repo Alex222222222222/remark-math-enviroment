@@ -3,6 +3,7 @@ import { BlockStartInfo, parseStartMarker } from "./parseStartMarker";
 import { parseEndMarker } from "./parseEndMarker";
 import { parseEnv } from "./mathEnv/parseEnv";
 import { fillUndefinedOptionsWithDefault, Options } from "./options";
+import { parseParams } from "./params";
 
 /**
  * Add `auto-numbering` to headings in Markdown.
@@ -50,10 +51,23 @@ export function remarkMathEnv(passOptions: Options) {
         node.children?.[0]?.value.trim().startsWith(options.endMarker!)
       ) {
         parseEndMarker(node, options.endMarker!, options, blocksInfo, buffer);
-        // TODO parse the optional parameters and overwrite the default options
+        // parse the optional parameters and overwrite the default options
+        let lastBlockInfo = blocksInfo.pop();
+        if (!lastBlockInfo) {
+          throw new Error("Parsing error: Incorrect nesting of environments");
+        }
+        if (options.theoremEnvs?.has(lastBlockInfo.envName) ) {
+          const theoremOptions = options.theoremEnvs.get(lastBlockInfo.envName);
+          if (theoremOptions) {
+            lastBlockInfo = { ...lastBlockInfo, ...theoremOptions };
+          }
+        } else if (lastBlockInfo.envName === "proof") {
+          lastBlockInfo = { ...lastBlockInfo, ...options.proofOptions! };
+        }
+        const params = parseParams(lastBlockInfo.params!, lastBlockInfo.startLine!);
+        lastBlockInfo = { ...lastBlockInfo, ...params };
 
         // feed the buffer to custom environment parser and return the new content
-        const lastBlockInfo = blocksInfo.pop();
         const lastBuffer = buffer.pop();
         const newContent = parseEnv(lastBlockInfo!, lastBuffer!);
         newChildren.push(...newContent);

@@ -1,10 +1,9 @@
 import { RootContent } from "mdast";
 import { BlockStartInfo } from "./parseStartMarker";
-import { Options } from ".";
+import { Options } from "./options";
 
 /**
- * Parse the end block marker, and return the content of the block.
- * Return undefined if the node is not an end block marker.
+ * Parse the end block marker, test if the node marker is an valid end block marker.
  * The marker is in the format: endMarker{env_name}.
  * Throw an error if the marker is not in the correct format or the environment name is unknown,
  * or the nesting of environments is incorrect.
@@ -22,7 +21,7 @@ export function parseEndMarker(
   options: Options,
   blocksInfo: BlockStartInfo[],
   buffer: RootContent[][]
-): RootContent[] | undefined {
+) {
   if (
     node.type !== "paragraph" ||
     node.children?.[0]?.type !== "text" ||
@@ -47,7 +46,7 @@ export function parseEndMarker(
   // get the name of the environment
   const envName: string = match[1];
   // test if the environment name is valid
-  if (!options.theorem_envs?.has(envName)) {
+  if (!options.theoremEnvs?.has(envName)) {
     // TODO: add test for this error
     throw new Error(
       `Parsing error: Unknown environment name "${envName}" at line ${node.position?.start.line}`
@@ -60,9 +59,9 @@ export function parseEndMarker(
     throw new Error(
       `Parsing error: Incorrect nesting of environments with "${
         blocksInfo[-1].envName
-      }" start at line ${blocksInfo[-1].line} and "${envName}" end at line ${
-        node.position?.start.line
-      }`
+      }" start at line ${
+        blocksInfo[-1].startLine
+      } and "${envName}" end at line ${node.position?.start.line}`
     );
   }
 
@@ -70,14 +69,12 @@ export function parseEndMarker(
   if (buffer[-1].length === 0) {
     // TODO: add test for this error
     throw new Error(
-      `Parsing error: Empty environment block at line ${blocksInfo[-1].line}-${
-        node.position?.start.line
-      }`
+      `Parsing error: Empty environment block at line ${
+        blocksInfo[-1].startLine
+      }-${node.position?.start.line}`
     );
   }
 
-  // TODO feed the buffer to custom environment parser and return the new content
-  const newContent: RootContent[] = buffer[-1];
-
-  return newContent;
+  // add the endline number to the block info
+  blocksInfo[-1].endLine = node.position?.start.line;
 }

@@ -7,7 +7,7 @@ describe("remarkMathEnv", () => {
   it("should not modify a single heading", async () => {
     const file = await unified()
       .use(remarkParse)
-      .use(remarkAutoNumberHeadings)
+      .use(remarkMathEnv)
       .use(remarkStringify)
       .process("# Hi, Saturn!");
 

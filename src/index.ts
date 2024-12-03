@@ -1,40 +1,8 @@
 import { Root, RootContent } from "mdast";
 import { BlockStartInfo, parseStartMarker } from "./parseStartMarker";
 import { parseEndMarker } from "./parseEndMarker";
-
-/**
- * @property {Map<string, [string, string]>} [theorem_envs]
- *   List of theorem environments to number.
- *   Each entry is a map with key as the name of the environment and value as an array with two elements:
- *   - The label to use in the output (e.g., "Theorem").
- *   - The label to use in the numbering (e.g., "theorem"). If two environments have the same numbering label, they will share the same counter.
- * @property {string} [defaultClassName]
- *   Default class name to use for the custom divs.
- * @property {string} [startMarker]
- *   Start marker for the custom environment.
- * @property {string} [endMarker]
- *   End marker for the custom environment.
- */
-export interface Options {
-  theorem_envs?: Map<string, [string, string]>;
-  defaultClassName?: string;
-  startMarker?: string;
-  endMarker?: string;
-}
-
-const defaultOptions: Options = {
-  theorem_envs: new Map([
-    ["theorem", ["Theorem", "theorem"]],
-    ["lemma", ["Lemma", "lemma"]],
-    ["corollary", ["Corollary", "corollary"]],
-    ["proposition", ["Proposition", "proposition"]],
-    ["definition", ["Definition", "definition"]],
-    ["example", ["Example", "example"]],
-  ]),
-  defaultClassName: "custom-div",
-  startMarker: "::math-env-start",
-  endMarker: "::math-env-end",
-};
+import { parseEnv } from "./mathEnv/parseEnv";
+import { fillUndefinedOptionsWithDefault, Options } from "./options";
 
 /**
  * Add `auto-numbering` to headings in Markdown.
@@ -44,15 +12,13 @@ const defaultOptions: Options = {
  * @returns
  *   Transform.
  */
-export function remarkMathEnv(options: Options = defaultOptions) {
-  return (tree: Root): undefined => {
-    const startMarker: string =
-      options.startMarker ?? defaultOptions.startMarker!;
-    const endMarker: string = options.endMarker ?? defaultOptions.endMarker!;
+export function remarkMathEnv(passOptions: Options) {
+  return (tree: Root): Root | undefined => {
+    const options = fillUndefinedOptionsWithDefault(passOptions);
 
     const theorem_env_counters = new Map<string, number>();
-    for (const [, [, counter]] of options.theorem_envs!) {
-      theorem_env_counters.set(counter, 0);
+    for (const [, theoremOptions] of options.theoremEnvs!) {
+      theorem_env_counters.set(theoremOptions.counterLabel, 0);
     }
 
     const newChildren: RootContent[] = [];
@@ -64,11 +30,11 @@ export function remarkMathEnv(options: Options = defaultOptions) {
       if (
         node.type === "paragraph" &&
         node.children?.[0]?.type === "text" &&
-        node.children?.[0]?.value.trim().startsWith(startMarker)
+        node.children?.[0]?.value.trim().startsWith(options.startMarker!)
       ) {
         const info = parseStartMarker(
           node,
-          startMarker,
+          options.startMarker!,
           options,
           theorem_env_counters
         );
@@ -81,22 +47,16 @@ export function remarkMathEnv(options: Options = defaultOptions) {
       else if (
         node.type === "paragraph" &&
         node.children?.[0]?.type === "text" &&
-        node.children?.[0]?.value.trim().startsWith(endMarker)
+        node.children?.[0]?.value.trim().startsWith(options.endMarker!)
       ) {
-        const newContent: RootContent[] | undefined = parseEndMarker(
-          node,
-          endMarker,
-          options,
-          blocksInfo,
-          buffer
-        );
-        if (newContent) {
-          newChildren.push(...newContent);
+        parseEndMarker(node, options.endMarker!, options, blocksInfo, buffer);
+        // TODO parse the optional parameters and overwrite the default options
 
-          // pop the last block info and buffer
-          blocksInfo.pop();
-          buffer.pop();
-        }
+        // feed the buffer to custom environment parser and return the new content
+        const lastBlockInfo = blocksInfo.pop();
+        const lastBuffer = buffer.pop();
+        const newContent = parseEnv(lastBlockInfo!, lastBuffer!);
+        newChildren.push(...newContent);
       }
       // this is a node within a math environment block or a regular node
       else {
@@ -111,6 +71,6 @@ export function remarkMathEnv(options: Options = defaultOptions) {
       }
     });
 
-    return undefined;
+    return { ...tree, children: newChildren };
   };
 }

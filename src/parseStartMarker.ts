@@ -1,19 +1,27 @@
 import { RootContent } from "mdast";
-import { Options } from "./index";
+import { Options } from "./options";
 
 /**
  * Information about the start block marker.
  * The marker is in the format: startMarker{env_name}[optional_params]
  * @param envName - The name of the environment.
- * @param line - The line number where the block starts.
- * @param params - The optional parameters for the environment.
- * @param numbering - The numbering of the environment.
+ * @param startLine - The line number where the block starts.
+ * @param endLine - The line number where the block ends.
+ * @param envStartText - The text to add at the start of the block.
+ * @param envEndText - The text to add at the end of the block.
+ * @param params - The optional parameters for the environment, will override the default parameters.
+ * @param numbering - The numbering for the environment.
+ * @param addNumbering - Whether to add numbering to the environment.
  */
 export interface BlockStartInfo {
   envName: string;
-  line?: number;
+  startLine?: number;
+  endLine?: number;
+  envStartText?: string;
+  envEndText?: string;
   params?: string;
   numbering?: number;
+  addNumbering?: boolean;
 }
 
 /**
@@ -59,7 +67,7 @@ export function parseStartMarker(
   // get the name of the environment
   const envName: string = match[1];
   // test if the environment name is valid
-  if (!options.theorem_envs?.has(envName)) {
+  if (!options.theoremEnvs?.has(envName)) {
     // TODO: add test for this error
     throw new Error(
       `Parsing error: Unknown environment name "${envName}" at line ${node.position?.start.line}`
@@ -70,7 +78,7 @@ export function parseStartMarker(
   const params: string = match[2] ?? "";
 
   // increment the counter for the environment
-  const counter_label = options.theorem_envs.get(envName)?.[1];
+  const counter_label = options.theoremEnvs!.get(envName);
   if (!counter_label) {
     // TODO: add test for this error
     throw new Error(
@@ -78,14 +86,14 @@ export function parseStartMarker(
     );
   }
   theorem_env_counters.set(
-    counter_label,
-    theorem_env_counters.get(counter_label)! + 1
+    counter_label.counterLabel,
+    theorem_env_counters.get(counter_label.counterLabel)! + 1
   );
 
   return {
     envName,
-    line: node.position?.start.line,
+    startLine: node.position?.start.line,
     params,
-    numbering: theorem_env_counters.get(counter_label)!,
+    numbering: theorem_env_counters.get(counter_label.counterLabel)!,
   };
 }

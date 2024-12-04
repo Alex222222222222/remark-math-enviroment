@@ -1,6 +1,59 @@
 import { RootContent } from "mdast";
 import { Options } from "./options";
 
+function getTextContent(node: RootContent): string {
+  switch (node.type) {
+    case "text":
+      return node.value;
+    case "inlineCode":
+      return node.value;
+    case "code":
+      return node.value;
+    case "strong":
+      return node.children.map(getTextContent).join(" ");
+    case "emphasis":
+      return node.children.map(getTextContent).join(" ");
+    case "delete":
+      return node.children.map(getTextContent).join(" ");
+    case "link":
+      return node.children.map(getTextContent).join(" ");
+    case "image":
+      return node.title ? node.title : "";
+    case "linkReference":
+      return node.identifier;
+    case "imageReference":
+      return node.identifier;
+    case "footnoteReference":
+      return node.identifier;
+    case "html":
+      return node.value;
+    case "paragraph":
+      return node.children.map(getTextContent).join(" ");
+    case "heading":
+      return node.children.map(getTextContent).join(" ");
+    case "thematicBreak":
+      return "";
+    case "blockquote":
+      return node.children.map(getTextContent).join(" ");
+    case "list":
+      return node.children.map(getTextContent).join(" ");
+    case "listItem":
+      return node.children.map(getTextContent).join(" ");
+    case "definition":
+      return node.identifier;
+    case "table":
+      return node.children.map(getTextContent).join(" ");
+    case "tableRow":
+      return node.children.map(getTextContent).join(" ");
+    case "tableCell":
+      return node.children.map(getTextContent).join(" ");
+    case "yaml":
+      return node.value;
+  }
+
+  return "";
+}
+
 /**
  * Information about the start block marker.
  * The marker is in the format: startMarker{env_name}[optional_params]
@@ -37,13 +90,14 @@ export interface BlockStartInfo {
  * @returns The block start information if the node is a start block marker.
  */
 export function parseStartMarker(
-  node: &RootContent,
-  startMarker: &string,
-  options: &Options,
-  theorem_env_counters: &Map<string, number>
+  node: RootContent,
+  startMarker: string,
+  options: Options,
+  theorem_env_counters: Map<string, number>
 ): BlockStartInfo | undefined {
   if (
     node.type !== "paragraph" ||
+    node.children?.length === 0 ||
     node.children?.[0]?.type !== "text" ||
     !node.children?.[0]?.value.trim().startsWith(startMarker)
   ) {
@@ -51,14 +105,13 @@ export function parseStartMarker(
   }
 
   // The text content of the paragraph.
-  const value = node.children?.[0]?.value;
+  const value = getTextContent(node);
 
   // use regex to get the name and params: startMarker{env_name}[optional_params]
   const match = value.match(new RegExp(`${startMarker}{(.*)}(\\[.*\\])?`));
 
   // if the start block marker is not in the correct format, raise an parsing error with line number
   if (!match) {
-    // TODO: add test for this error
     throw new Error(
       `Parsing error: Incorrect format for the start block marker at line ${node.position?.start.line}`
     );
@@ -67,14 +120,11 @@ export function parseStartMarker(
   // get the name of the environment
   const envName: string = match[1];
   // test if the environment name is valid
-  if (!options.theoremEnvs?.has(envName)) {
-    // TODO: add test for this error
+  if (!options.theoremEnvs?.has(envName) && envName !== "proof") {
     throw new Error(
       `Parsing error: Unknown environment name "${envName}" at line ${node.position?.start.line}`
     );
   }
-
-  // TODO if the name is not valid throw an error
 
   // get the optional params
   const params: string = match[2] ?? "";
@@ -82,7 +132,6 @@ export function parseStartMarker(
   // increment the counter for the environment
   const counter_label = options.theoremEnvs!.get(envName);
   if (!counter_label) {
-    // TODO: add test for this error
     throw new Error(
       `Parsing error: Counter label not found for environment "${envName}" at line ${node.position?.start.line}`
     );

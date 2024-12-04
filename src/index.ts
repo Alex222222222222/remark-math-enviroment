@@ -5,6 +5,7 @@ import { parseEnv } from "./mathEnv/parseEnv";
 import { fillUndefinedOptionsWithDefault, Options } from "./options";
 import { parseParams } from "./params";
 
+
 /**
  * Add `auto-numbering` to headings in Markdown.
  *
@@ -13,12 +14,12 @@ import { parseParams } from "./params";
  * @returns
  *   Transform.
  */
-export function remarkMathEnv(passOptions: Options) {
+export function remarkMathEnv(options: Options) {
   return (tree: Root): Root | undefined => {
-    const options = fillUndefinedOptionsWithDefault(passOptions);
+    const newOptions = fillUndefinedOptionsWithDefault(options);
 
     const theorem_env_counters = new Map<string, number>();
-    for (const [, theoremOptions] of options.theoremEnvs!) {
+    for (const [, theoremOptions] of newOptions.theoremEnvs!) {
       theorem_env_counters.set(theoremOptions.counterLabel, 0);
     }
 
@@ -31,12 +32,12 @@ export function remarkMathEnv(passOptions: Options) {
       if (
         node.type === "paragraph" &&
         node.children?.[0]?.type === "text" &&
-        node.children?.[0]?.value.trim().startsWith(options.startMarker!)
+        node.children?.[0]?.value.startsWith(newOptions.startMarker!)
       ) {
         const info = parseStartMarker(
           node,
-          options.startMarker!,
-          options,
+          newOptions.startMarker!,
+          newOptions,
           theorem_env_counters
         );
         if (info) {
@@ -48,23 +49,34 @@ export function remarkMathEnv(passOptions: Options) {
       else if (
         node.type === "paragraph" &&
         node.children?.[0]?.type === "text" &&
-        node.children?.[0]?.value.trim().startsWith(options.endMarker!)
+        node.children?.[0]?.value.trim().startsWith(newOptions.endMarker!)
       ) {
-        parseEndMarker(node, options.endMarker!, options, blocksInfo, buffer);
+        parseEndMarker(
+          node,
+          newOptions.endMarker!,
+          newOptions,
+          blocksInfo,
+          buffer
+        );
         // parse the optional parameters and overwrite the default options
         let lastBlockInfo = blocksInfo.pop();
         if (!lastBlockInfo) {
           throw new Error("Parsing error: Incorrect nesting of environments");
         }
-        if (options.theoremEnvs?.has(lastBlockInfo.envName) ) {
-          const theoremOptions = options.theoremEnvs.get(lastBlockInfo.envName);
+        if (newOptions.theoremEnvs?.has(lastBlockInfo.envName)) {
+          const theoremOptions = newOptions.theoremEnvs.get(
+            lastBlockInfo.envName
+          );
           if (theoremOptions) {
             lastBlockInfo = { ...lastBlockInfo, ...theoremOptions };
           }
         } else if (lastBlockInfo.envName === "proof") {
-          lastBlockInfo = { ...lastBlockInfo, ...options.proofOptions! };
+          lastBlockInfo = { ...lastBlockInfo, ...newOptions.proofOptions! };
         }
-        const params = parseParams(lastBlockInfo.params!, lastBlockInfo.startLine!);
+        const params = parseParams(
+          lastBlockInfo.params!,
+          lastBlockInfo.startLine!
+        );
         lastBlockInfo = { ...lastBlockInfo, ...params };
 
         // feed the buffer to custom environment parser and return the new content

@@ -37,7 +37,6 @@ export function parseEndMarker(
 
   // if the end block marker is not in the correct format, raise an parsing error with line number
   if (!match) {
-    // TODO: add test for this error
     throw new Error(
       `Parsing error: Incorrect format for the end block marker at line ${node.position?.start.line}`
     );
@@ -46,35 +45,40 @@ export function parseEndMarker(
   // get the name of the environment
   const envName: string = match[1];
   // test if the environment name is valid
-  if (!options.theoremEnvs?.has(envName)) {
-    // TODO: add test for this error
+  if (!options.theoremEnvs?.has(envName) && envName !== "proof") {
     throw new Error(
       `Parsing error: Unknown environment name "${envName}" at line ${node.position?.start.line}`
     );
   }
 
+  // throw an error if blocksInfo is empty
+  if (blocksInfo.length === 0) {
+    throw new Error(
+      `Parsing error: Incorrect nesting of environments with "${envName}" end at line ${node.position?.start.line}`
+    );
+  }
+
   // test if the environment name is the same as the current block depth
-  if (blocksInfo[-1].envName !== envName) {
+  if (blocksInfo[blocksInfo.length - 1].envName !== envName) {
     // TODO: add test for this error
     throw new Error(
       `Parsing error: Incorrect nesting of environments with "${
-        blocksInfo[-1].envName
+        blocksInfo[blocksInfo.length - 1].envName
       }" start at line ${
-        blocksInfo[-1].startLine
+        blocksInfo[blocksInfo.length - 1].startLine
       } and "${envName}" end at line ${node.position?.start.line}`
     );
   }
 
   // test if the buffer is empty
-  if (buffer[-1].length === 0) {
-    // TODO: add test for this error
+  if (buffer[buffer.length - 1].length === 0) {
     throw new Error(
       `Parsing error: Empty environment block at line ${
-        blocksInfo[-1].startLine
+        blocksInfo[blocksInfo.length - 1].startLine
       }-${node.position?.start.line}`
     );
   }
 
   // add the endline number to the block info
-  blocksInfo[-1].endLine = node.position?.start.line;
+  blocksInfo[blocksInfo.length - 1].endLine = node.position?.start.line;
 }

@@ -130,7 +130,7 @@ export function parseStartMarker(
   const params: string = match[2] ?? "";
 
   // increment the counter for the environment
-  const counter_label = options.theoremEnvs!.get(envName);
+  const counter_label = envName === "proof" ? options.proofOptions : options.theoremEnvs?.get(envName);
   if (!counter_label) {
     throw new Error(
       `Parsing error: Counter label not found for environment "${envName}" at line ${node.position?.start.line}`

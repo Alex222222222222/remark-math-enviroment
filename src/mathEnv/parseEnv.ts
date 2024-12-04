@@ -12,6 +12,7 @@ export function parseEnv(
   info: BlockStartInfo,
   buffer: RootContent[]
 ): RootContent[] {
+  // TODO change "proof" in all the error messages
   // wrap the buffer in a div with the class "proof"
   // which should start with bold "Proof:" text and end with a black square
 
@@ -28,9 +29,10 @@ export function parseEnv(
   }
 
   // add envStartText text to the start of the buffer
-  const startText = info.addNumbering
-    ? `${info.envStartText} ${info.numbering} `
-    : `${info.envStartText} `;
+  let startText = info.addNumbering
+    ? `${info.envStartText} ${info.numbering}`
+    : `${info.envStartText}`;
+  startText = info.envName === "proof" ? `${startText} ` : `${startText}. `;
   if (buffer[0].type === "paragraph") {
     // add the bold startText text to the start of the buffer
     buffer[0].children?.unshift({

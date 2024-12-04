@@ -769,4 +769,60 @@ describe("parseEnv", () => {
       },
     ]);
   });
+
+  it("should add startText and endText with numbering for buffer with multiple elements", async () => {
+    // random line number
+    const line = Math.floor(Math.random() * 1000);
+    // random startText and endText
+    const startText = randomString(10);
+    const endText = randomString(10);
+    // random numbering for the proof
+    const numbering = Math.floor(Math.random() * 1000);
+    const buffer: RootContent[] = [
+      {
+        type: "paragraph",
+        children: [
+          {
+            type: "text",
+            value: "This is a proof.",
+          },
+        ],
+      },
+    ];
+    const info: BlockStartInfo = {
+      envName: "theorem",
+      startLine: line,
+      envStartText: startText,
+      envEndText: endText,
+      numbering: numbering,
+      addNumbering: true,
+    };
+
+    const result: RootContent[] = parseEnv(info, buffer);
+
+    expect(result).toEqual([
+      {
+        type: "paragraph",
+        children: [
+          {
+            type: "strong",
+            children: [
+              {
+                type: "text",
+                value: `${startText} ${numbering}. `,
+              },
+            ],
+          },
+          {
+            type: "text",
+            value: "This is a proof.",
+          },
+          {
+            type: "text",
+            value: endText,
+          },
+        ],
+      },
+    ]);
+  });
 });

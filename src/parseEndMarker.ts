@@ -60,7 +60,6 @@ export function parseEndMarker(
 
   // test if the environment name is the same as the current block depth
   if (blocksInfo[blocksInfo.length - 1].envName !== envName) {
-    // TODO: add test for this error
     throw new Error(
       `Parsing error: Incorrect nesting of environments with "${
         blocksInfo[blocksInfo.length - 1].envName

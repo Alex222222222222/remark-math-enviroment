@@ -2,9 +2,12 @@ import { Root, RootContent } from "mdast";
 import { BlockStartInfo, parseStartMarker } from "./parseStartMarker";
 import { parseEndMarker } from "./parseEndMarker";
 import { parseEnv } from "./mathEnv/parseEnv";
-import { fillUndefinedOptionsWithDefault, Options } from "./options";
+import {
+  fillUndefinedOptionsWithDefault,
+  Options,
+  defaultOptions,
+} from "./options";
 import { parseParams } from "./params";
-
 
 /**
  * Add `auto-numbering` to headings in Markdown.
@@ -14,14 +17,15 @@ import { parseParams } from "./params";
  * @returns
  *   Transform.
  */
-export function remarkMathEnv(options: Options) {
-  return (tree: Root): Root | undefined => {
+export function remarkMathEnv(options: Options = defaultOptions) {
+  return (tree: Root): undefined => {
     const newOptions = fillUndefinedOptionsWithDefault(options);
 
     const theorem_env_counters = new Map<string, number>();
     for (const [, theoremOptions] of newOptions.theoremEnvs!) {
       theorem_env_counters.set(theoremOptions.counterLabel, 0);
     }
+    theorem_env_counters.set(newOptions.proofOptions!.counterLabel, 0);
 
     const newChildren: RootContent[] = [];
     const blocksInfo: BlockStartInfo[] = [];
@@ -32,7 +36,7 @@ export function remarkMathEnv(options: Options) {
       if (
         node.type === "paragraph" &&
         node.children?.[0]?.type === "text" &&
-        node.children?.[0]?.value.startsWith(newOptions.startMarker!)
+        node.children?.[0]?.value.trim().startsWith(newOptions.startMarker!)
       ) {
         const info = parseStartMarker(
           node,
@@ -82,7 +86,11 @@ export function remarkMathEnv(options: Options) {
         // feed the buffer to custom environment parser and return the new content
         const lastBuffer = buffer.pop();
         const newContent = parseEnv(lastBlockInfo!, lastBuffer!);
-        newChildren.push(...newContent);
+        if (buffer.length > 0) {
+          buffer[buffer.length - 1].push(...newContent);
+        } else {
+          newChildren.push(...newContent);
+        }
       }
       // this is a node within a math environment block or a regular node
       else {
@@ -92,11 +100,13 @@ export function remarkMathEnv(options: Options) {
         }
         // within a math environment block
         else {
-          buffer[-1].push(node);
+          buffer[buffer.length - 1].push(node);
         }
       }
     });
 
-    return { ...tree, children: newChildren };
+    tree.children = newChildren;
+
+    return undefined;
   };
 }

@@ -75,7 +75,7 @@ const defaultProofOptions: GeneralEnvOptions = {
  * Default options.
  * @type {Options}
  */
-const defaultOptions: Options = {
+export const defaultOptions: Options = {
   theoremEnvs: new Map([
     ["theorem", defaultTheoremOptions("theorem")],
     ["lemma", defaultTheoremOptions("lemma")],

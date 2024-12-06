@@ -75,6 +75,7 @@ export interface BlockStartInfo {
   params?: string;
   numbering?: number;
   addNumbering?: boolean;
+  name?: string;
 }
 
 /**

@@ -18,12 +18,15 @@
  *   Manually set the numbering for the environment.
  * @property {boolean} addNumbering
  *   Whether to add numbering to the environment.
+ * @property {string} name
+ *  The name of the environment.
  */
 export interface Params {
   envStartText?: string;
   envEndText?: string;
   numbering?: number;
   addNumbering?: boolean;
+  name?: string;
 }
 
 /**
@@ -58,6 +61,9 @@ export function parseParams(params: string, line: number): Params {
         break;
       case "addNumbering":
         parsedParams.addNumbering = value === "true";
+        break;
+      case "name":
+        parsedParams.name = value;
         break;
       default:
         throw new Error(

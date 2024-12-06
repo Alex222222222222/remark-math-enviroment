@@ -32,6 +32,7 @@ export function parseEnv(
   let startText = info.addNumbering
     ? `${info.envStartText} ${info.numbering}`
     : `${info.envStartText}`;
+  startText = info.name ? `${startText} (${info.name})` : startText;
   startText = info.envName === "proof" ? `${startText} ` : `${startText}. `;
   if (buffer[0].type === "paragraph") {
     // add the bold startText text to the start of the buffer
